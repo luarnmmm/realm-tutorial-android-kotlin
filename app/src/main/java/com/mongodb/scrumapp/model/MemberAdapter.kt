@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker.model
+package com.mongodb.scrumapp.model
 
 import android.app.AlertDialog
 import android.util.Log
@@ -7,8 +7,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.mongodb.tasktracker.R
-import com.mongodb.tasktracker.TAG
-import com.mongodb.tasktracker.taskApp
+import com.mongodb.scrumapp.TAG
+import com.mongodb.scrumapp.taskApp
 import io.realm.mongodb.functions.Functions
 import org.bson.Document
 
@@ -22,7 +22,7 @@ internal class MemberAdapter(private val data: ArrayList<Member>, private val us
     lateinit var parent : ViewGroup
 
     override fun onCreateViewHolder(parent: ViewGroup,
-                                    viewType: Int): MemberAdapter.MemberViewHolder {
+                                    viewType: Int): MemberViewHolder {
         // save a reference to the parent view so we can create dialogs later
         this.parent = parent
         Log.i(TAG(), "Displaying a list of project members. Size: ${data.size}")
@@ -44,6 +44,21 @@ internal class MemberAdapter(private val data: ArrayList<Member>, private val us
                     .setCancelable(true)
                     .setPositiveButton("Remove User") { dialog, _ ->
                         // TODO: Call the `removeTeamMember` Realm Function through `taskApp` to remove the selected user from the project.
+                        val functionsManager: Functions = taskApp.getFunctions(user)
+                        functionsManager.callFunctionAsync("removeTeamMember",
+                                listOf(obj.name), Document::class.java) { result ->
+                            run {
+                                dialog.dismiss()
+                                if (result.isSuccess) {
+                                    Log.v(TAG(), "removed team member: ${result.get()}")
+                                    data.removeAt(position)
+                                    notifyItemRemoved(position)
+                                } else {
+                                    Log.e(TAG(), "failed to remove team member with: " + result.error)
+                                    Toast.makeText(parent.context, result.error.toString(), Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
                         // When the function completes, remember to dismiss the dialog.
                         // If the function successfully removes the team member, remove the team member from the displayed data and notify the Adapter that an item has been removed.
                     }

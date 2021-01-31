@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker.model
+package com.mongodb.scrumapp.model
 
 import android.util.Log
 import android.view.*
@@ -6,7 +6,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.mongodb.tasktracker.R
-import com.mongodb.tasktracker.TAG
+import com.mongodb.scrumapp.TAG
 import io.realm.OrderedRealmCollection
 import io.realm.Realm
 import io.realm.RealmRecyclerViewAdapter
@@ -87,6 +87,21 @@ internal class TaskAdapter(data: OrderedRealmCollection<Task>, val user: io.real
         // Step 1: Connect to the project realm using the `partition` member variable of the adapter.
         // Step 2: Query the realm for the Task with the specified _id value.
         // Step 3: Set the `statusEnum` property of the Task to the specified status value.
+        // need to create a separate instance of realm to issue an update, since this event is
+        // handled by a background thread and realm instances cannot be shared across threads
+        val config = SyncConfiguration.Builder(user, partition)
+                .build()
+
+        // Sync all realm changes via a new instance, and when that instance has been successfully created connect it to an on-screen list (a recycler view)
+        val realm: Realm = Realm.getInstance(config)
+        // execute Transaction (not async) because changeStatus should execute on a background thread
+        realm.executeTransaction {
+            // using our thread-local new realm instance, query for and update the task status
+            val item = it.where<Task>().equalTo("_id", _id).findFirst()
+            item?.statusEnum = status
+        }
+        // always close realms when you are done with them!
+        realm.close()
     }
 
     private fun removeAt(id: ObjectId) {
@@ -94,6 +109,21 @@ internal class TaskAdapter(data: OrderedRealmCollection<Task>, val user: io.real
         // Step 1: Connect to the project realm using the `partition` member variable of the adapter.
         // Step 2: Query the realm for the Task with the specified _id value.
         // Step 3: Delete the Task from the project realm.
+        // need to create a separate instance of realm to issue an update, since this event is
+        // handled by a background thread and realm instances cannot be shared across threads
+        val config = SyncConfiguration.Builder(user, partition)
+                .build()
+
+        // Sync all realm changes via a new instance, and when that instance has been successfully created connect it to an on-screen list (a recycler view)
+        val realm: Realm = Realm.getInstance(config)
+        // execute Transaction (not async) because remoteAt should execute on a background thread
+        realm.executeTransaction {
+            // using our thread-local new realm instance, query for and delete the task
+            val item = it.where<Task>().equalTo("_id", id).findFirst()
+            item?.deleteFromRealm()
+        }
+        // always close realms when you are done with them!
+        realm.close()
     }
 
     internal inner class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {

@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker.model
+package com.mongodb.scrumapp.model
 
 
 enum class TaskStatus(val displayName: String) {

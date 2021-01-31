@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker.model
+package com.mongodb.scrumapp.model
 
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey

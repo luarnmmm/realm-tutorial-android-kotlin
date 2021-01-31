@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker
+package com.mongodb.scrumapp
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -11,7 +11,10 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.mongodb.tasktracker.model.*
+import com.mongodb.scrumapp.model.Member
+import com.mongodb.scrumapp.model.MemberAdapter
+import com.mongodb.tasktracker.R
+import com.mongodb.scrumapp.model.*
 import io.realm.mongodb.functions.Functions
 import org.bson.Document
 import java.util.*
@@ -55,6 +58,24 @@ class MemberActivity : AppCompatActivity() {
                 .setPositiveButton("Add User") { dialog, _ ->
                     dialog.dismiss()
                     // TODO: Add the new team member to the project by calling the `addTeamMember` Realm Function through `taskApp`.
+                    val functionsManager: Functions = taskApp.getFunctions(user)
+                    functionsManager.callFunctionAsync(
+                            "addTeamMember",
+                            listOf(input.text.toString()),
+                            Document::class.java
+                    ) { result ->
+                        if (result.isSuccess) {
+                            Log.v(
+                                    TAG(),
+                                    "Attempted to add team member. Result: ${result.get()}"
+                            )
+                            // rebuild the list of members to display the newly-added member
+                            setUpRecyclerView()
+                        } else {
+                            Log.e(TAG(), "failed to add team member with: " + result.error)
+                            Toast.makeText(this, result.error.errorMessage, Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
                 .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.cancel()
@@ -81,5 +102,21 @@ class MemberActivity : AppCompatActivity() {
         // recyclerView.adapter = adapter
         // recyclerView.setHasFixedSize(true)
         // recyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+        val functionsManager: Functions = taskApp.getFunctions(user)
+        // get team members by calling a Realm Function which returns a list of members
+        functionsManager.callFunctionAsync("getMyTeamMembers", ArrayList<String>(), ArrayList::class.java) { result ->
+            if (result.isSuccess) {
+                Log.v(TAG(), "successfully fetched team members. Number of team members: ${result.get().size}")
+                // The `getMyTeamMembers` function returns team members as Document objects. Convert them into Member objects so the MemberAdapter can display them.
+                this.members = ArrayList(result.get().map { item -> Member(item as Document) })
+                adapter = MemberAdapter(members, user!!)
+                recyclerView.layoutManager = LinearLayoutManager(this)
+                recyclerView.adapter = adapter
+                recyclerView.setHasFixedSize(true)
+                recyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+            } else {
+                Log.e(TAG(), "failed to get team members with: " + result.error)
+            }
+        }
     }
 }

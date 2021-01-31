@@ -1,7 +1,8 @@
-package com.mongodb.tasktracker
+package com.mongodb.scrumapp
 
 import android.app.Application
 import android.util.Log
+import com.mongodb.tasktracker.BuildConfig
 
 import io.realm.Realm
 import io.realm.log.LogLevel

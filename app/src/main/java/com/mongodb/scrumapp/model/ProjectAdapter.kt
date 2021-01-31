@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker.model
+package com.mongodb.scrumapp.model
 
 import android.content.Intent
 import android.util.Log
@@ -6,6 +6,7 @@ import android.view.*
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.mongodb.scrumapp.*
 import com.mongodb.tasktracker.*
 import io.realm.RealmList
 import io.realm.RealmRecyclerViewAdapter

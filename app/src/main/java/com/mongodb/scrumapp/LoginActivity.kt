@@ -1,4 +1,4 @@
-package com.mongodb.tasktracker
+package com.mongodb.scrumapp
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -6,7 +6,10 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import com.mongodb.tasktracker.R
 import io.realm.mongodb.Credentials
+import kotlin.math.log
+
 /*
 * LoginActivity: launched whenever a user isn't already logged in. Allows a user to enter email
 * and password credentials to log in to an existing account or create a new account.
@@ -53,6 +56,8 @@ class LoginActivity : AppCompatActivity() {
 
     // handle user authentication (login) and account creation
     private fun login(createUser: Boolean) {
+
+        
         if (!validateCredentials()) {
             onLoginFailed("Invalid username or password")
             return
@@ -69,8 +74,31 @@ class LoginActivity : AppCompatActivity() {
         if (createUser) {
             // register a user using the Realm App we created in the TaskTracker class
             // TODO: Register a new user with the supplied username and password when the "Create" button is pressed.
+            taskApp.emailPassword.registerUserAsync(username, password) {
+                // re-enable the buttons after user registration returns a result
+                createUserButton.isEnabled = true;
+                loginButton.isEnabled = true;
+                if (!it.isSuccess) {
+                    onLoginFailed("Could not register user.")
+                    Log.e(TAG(), "Error: ${it.error}")
+                } else {
+                    Log.i(TAG(), "Successfully registered user.")
+                    // when the account has been created successfully, log in the account
+                    login(false)
+                }
+            }
         } else {
             // TODO: Log in with the supplied username and password when the "Log in" button is pressed.
+            val creds = Credentials.emailPassword(username, password)
+            taskApp.loginAsync(creds) {
+                loginButton.isEnabled = true
+                createUserButton.isEnabled = true
+                if (!it.isSuccess) {
+                    onLoginFailed(it.error.message ?: "An error occurred.")
+                } else {
+                    onLoginSuccess()
+                }
+            }
         }
     }
 }
